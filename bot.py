@@ -11,6 +11,23 @@ from google.cloud import dialogflow
 
 logger = logging.getLogger('bot-helper')
 
+log_formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(filename)s %(message)s')
+
+path = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(path, 'bot-app.log')
+
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setFormatter(log_formatter)
+stream_handler.setLevel(logging.INFO)
+
+log_file = RotatingFileHandler(path, maxBytes=20000, backupCount=2, encoding='utf-8')
+log_file.setFormatter(log_formatter)
+
+logger.addHandler(stream_handler)
+logger.addHandler(log_file)
+
+logger.setLevel(logging.DEBUG)
+
 
 class TelegramLogsHandler(logging.Handler):
     """Обработчик логов. Отправляет логи в Телеграм"""
@@ -82,25 +99,9 @@ def main() -> None:
 
     adm_bot = Bot(token=adm_bot_token)
 
-    log_formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(filename)s %(message)s')
-
-    path = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(path, 'bot-app.log')
-
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(log_formatter)
-    stream_handler.setLevel(logging.INFO)
-
-    log_file = RotatingFileHandler(path, maxBytes=20000, backupCount=2, encoding='utf-8')
-    log_file.setFormatter(log_formatter)
-
     log_tlg = TelegramLogsHandler(tg_bot=adm_bot, chat_id=chat_id)
     log_tlg.setLevel(logging.INFO)
-
-    logger.addHandler(stream_handler)
-    logger.addHandler(log_file)
     logger.addHandler(log_tlg)
-    logger.setLevel(logging.DEBUG)
 
     logger.info('Телеграм-бот хэлпер запущен!')
 
