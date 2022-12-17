@@ -22,7 +22,7 @@ def echo(update: Update, context: CallbackContext) -> None:
     """Отправляет сообщение пользователю на основе его запроса"""
     user_id = update.effective_chat['id']
     user_msg = update.message.text
-    message = detect_intent_texts(session_id=user_id, text=user_msg, language_code='ru')
+    message = detect_intent_texts(session_id=user_id, text=user_msg)
     update.message.reply_text(message)
 
 

@@ -44,7 +44,7 @@ class TelegramLogsHandler(logging.Handler):
         self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
-def detect_intent_texts(session_id, text, language_code, project_id='dvmn-proj'):
+def detect_intent_texts(session_id, text, language_code='ru', project_id='dvmn-proj'):
     """Returns the result of detect intent with texts as inputs.
 
     Using the same `session_id` between requests allows continuation
@@ -75,9 +75,10 @@ def detect_intent_texts(session_id, text, language_code, project_id='dvmn-proj')
 
 
 def echo(event, vk_api):
+    help_msg = detect_intent_texts(session_id=event.user_id, text=event.text)
     vk_api.messages.send(
         user_id=event.user_id,
-        message=event.text,
+        message=help_msg,
         random_id=random.randint(1, 1000)
     )
 
