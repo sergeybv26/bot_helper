@@ -1,13 +1,14 @@
-"""Модуль с телеграм-ботом"""
+"""Модуль с ботом"""
 import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
 
 from environs import Env
-from telegram import Bot, Update, ForceReply
-from telegram.ext import CallbackContext, Updater, CommandHandler, MessageHandler, Filters
+from telegram import Bot
 from google.cloud import dialogflow
+from vk_api import vk_api
+from vk_api.longpoll import VkLongPoll, VkEventType
 
 logger = logging.getLogger('bot-helper')
 
@@ -72,27 +73,11 @@ def detect_intent_texts(session_id, text, language_code, project_id='dvmn-proj')
     return response.query_result.fulfillment_text
 
 
-def start(update: Update, context: CallbackContext) -> None:
-    """Отправляет приветственное сообщение, когда введена команда /start"""
-    user = update.effective_user
-    update.message.reply_markdown_v2(fr'Здравствуйте, {user.mention_markdown_v2()}\!',
-                                     reply_markup=ForceReply(selective=True)
-                                     )
-
-
-def echo(update: Update, context: CallbackContext) -> None:
-    """Отправляет сообщение пользователю на основе его запроса"""
-    user_id = update.effective_chat['id']
-    user_msg = update.message.text
-    message = detect_intent_texts(session_id=user_id, text=user_msg, language_code='ru')
-    update.message.reply_text(message)
-
-
 def main() -> None:
     """Запуск бота"""
     env = Env()
     env.read_env()
-    bot_token = env('BOT_TOKEN')
+    vk_token = env('VK_KEY')
     chat_id = env('CHAT_ID')
     adm_bot_token = env('ADM_BOT_TOKEN')
     project_id = env('PROJECT_ID')
@@ -103,16 +88,18 @@ def main() -> None:
     log_tlg.setLevel(logging.INFO)
     logger.addHandler(log_tlg)
 
-    logger.info('Телеграм-бот хэлпер запущен!')
+    vk_session = vk_api.VkApi(token=vk_token)
 
-    updater = Updater(bot_token)
-    dispatcher = updater.dispatcher
+    longpoll = VkLongPoll(vk_session)
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-
-    updater.start_polling()
-    updater.idle()
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            print('Новое сообщение:')
+            if event.to_me:
+                print('Для меня от: ', event.user_id)
+            else:
+                print('От меня для: ', event.user_id)
+            print('Текст:', event.text)
 
 
 if __name__ == '__main__':
