@@ -71,11 +71,14 @@ def detect_intent_texts(session_id, text, language_code='ru', project_id='dvmn-p
         )
     )
     logger.debug("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
-    return response.query_result.fulfillment_text
+    return response.query_result
 
 
 def echo(event, vk_api):
-    help_msg = detect_intent_texts(session_id=event.user_id, text=event.text)
+    dialogflow_response = detect_intent_texts(session_id=event.user_id, text=event.text)
+    if dialogflow_response.intent.is_fallback:
+        return None
+    help_msg = dialogflow_response.fulfillment_text
     vk_api.messages.send(
         user_id=event.user_id,
         message=help_msg,
