@@ -91,3 +91,9 @@ python3 tg_bot.py
 ```shell
 python3 bot.py
 ```
+
+Ознакомиться с функционалом бота-помощника можно:
+* Телеграм ```https://t.me/sukhanov_helper_bot```
+* ВКонтакте ```https://vk.com/club217816463```
+
+[!screen-gif](./gif/Демонстрация.gif)

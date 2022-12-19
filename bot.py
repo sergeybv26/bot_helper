@@ -71,4 +71,7 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as err:
+        logger.critical(f'Бот упал с ошибкой: {err}')
