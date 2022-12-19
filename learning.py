@@ -53,6 +53,8 @@ def create_intent(file_path):
 
 
 if __name__ == '__main__':
+    print('Начато обучение нейросети')
     base_dir = os.path.dirname(__file__)
     path = os.path.join(base_dir, 'jsons/questions.json')
     create_intent('jsons/questions.json')
+    print('Обучение нейросети окончено')

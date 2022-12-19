@@ -1,50 +1,18 @@
-"""Модуль с ботом"""
+"""Модуль с VK-ботом"""
 import logging
-import os
 import random
-import sys
-from logging.handlers import RotatingFileHandler
 
 from environs import Env
-from telegram import Bot
 from google.cloud import dialogflow
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
 
+from log import config
+
 logger = logging.getLogger('bot-helper')
 
-log_formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(filename)s %(message)s')
 
-path = os.path.dirname(os.path.abspath(__file__))
-path = os.path.join(path, 'bot-app.log')
-
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(log_formatter)
-stream_handler.setLevel(logging.INFO)
-
-log_file = RotatingFileHandler(path, maxBytes=20000, backupCount=2, encoding='utf-8')
-log_file.setFormatter(log_formatter)
-
-logger.addHandler(stream_handler)
-logger.addHandler(log_file)
-
-logger.setLevel(logging.DEBUG)
-
-
-class TelegramLogsHandler(logging.Handler):
-    """Обработчик логов. Отправляет логи в Телеграм"""
-
-    def __init__(self, tg_bot, chat_id):
-        super().__init__()
-        self.chat_id = chat_id
-        self.tg_bot = tg_bot
-
-    def emit(self, record) -> None:
-        log_entry = self.format(record)
-        self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
-
-
-def detect_intent_texts(session_id, text, language_code='ru', project_id='dvmn-proj'):
+def detect_intent_texts(session_id, text, project_id='dvmn-proj', language_code='ru'):
     """Returns the result of detect intent with texts as inputs.
 
     Using the same `session_id` between requests allows continuation
@@ -74,8 +42,7 @@ def detect_intent_texts(session_id, text, language_code='ru', project_id='dvmn-p
     return response.query_result
 
 
-def echo(event, vk_api):
-    dialogflow_response = detect_intent_texts(session_id=event.user_id, text=event.text)
+def send_msg(event, vk_api, dialogflow_response):
     if dialogflow_response.intent.is_fallback:
         return None
     help_msg = dialogflow_response.fulfillment_text
@@ -91,15 +58,7 @@ def main() -> None:
     env = Env()
     env.read_env()
     vk_token = env('VK_KEY')
-    chat_id = env('CHAT_ID')
-    adm_bot_token = env('ADM_BOT_TOKEN')
     project_id = env('PROJECT_ID')
-
-    adm_bot = Bot(token=adm_bot_token)
-
-    log_tlg = TelegramLogsHandler(tg_bot=adm_bot, chat_id=chat_id)
-    log_tlg.setLevel(logging.INFO)
-    logger.addHandler(log_tlg)
 
     vk_session = vk.VkApi(token=vk_token)
 
@@ -107,7 +66,8 @@ def main() -> None:
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            echo(event, vk_api)
+            dialogflow_response = detect_intent_texts(session_id=event.user_id, text=event.text, project_id=project_id)
+            send_msg(event, vk_api, dialogflow_response)
 
 
 if __name__ == '__main__':
