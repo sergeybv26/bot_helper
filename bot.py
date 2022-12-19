@@ -1,81 +1,73 @@
-"""Модуль с телеграм-ботом"""
+"""Модуль с VK-ботом"""
 import logging
-import os
-import sys
-from logging.handlers import RotatingFileHandler
+import random
 
 from environs import Env
-from telegram import Bot, Update, ForceReply
-from telegram.ext import CallbackContext, Updater, CommandHandler, MessageHandler, Filters
+from google.cloud import dialogflow
+import vk_api as vk
+from vk_api.longpoll import VkLongPoll, VkEventType
+
+from log import config
 
 logger = logging.getLogger('bot-helper')
 
 
-class TelegramLogsHandler(logging.Handler):
-    """Обработчик логов. Отправляет логи в Телеграм"""
+def detect_intent_texts(session_id, text, project_id='dvmn-proj', language_code='ru'):
+    """Returns the result of detect intent with texts as inputs.
 
-    def __init__(self, tg_bot, chat_id):
-        super().__init__()
-        self.chat_id = chat_id
-        self.tg_bot = tg_bot
+    Using the same `session_id` between requests allows continuation
+    of the conversation."""
 
-    def emit(self, record) -> None:
-        log_entry = self.format(record)
-        self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
+    session_client = dialogflow.SessionsClient()
+
+    session = session_client.session_path(project_id, session_id)
+    logger.debug("Session path: {}\n".format(session))
+
+    text_input = dialogflow.TextInput(text=text, language_code=language_code)
+
+    query_input = dialogflow.QueryInput(text=text_input)
+
+    response = session_client.detect_intent(
+        request={"session": session, "query_input": query_input}
+    )
+
+    logger.debug("Query text: {}".format(response.query_result.query_text))
+    logger.debug(
+        "Detected intent: {} (confidence: {})\n".format(
+            response.query_result.intent.display_name,
+            response.query_result.intent_detection_confidence,
+        )
+    )
+    logger.debug("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
+    return response.query_result
 
 
-def start(update: Update, context: CallbackContext) -> None:
-    """Отправляет приветственное сообщение, когда введена команда /start"""
-    user = update.effective_user
-    update.message.reply_markdown_v2(fr'Здравствуйте, {user.mention_markdown_v2()}\!',
-                                     reply_markup=ForceReply(selective=True)
-                                     )
-
-
-def echo(update: Update, context: CallbackContext) -> None:
-    """Отправляет эхо-сообщение пользователю"""
-    update.message.reply_text(update.message.text)
+def send_msg(event, vk_api, dialogflow_response):
+    if dialogflow_response.intent.is_fallback:
+        return None
+    help_msg = dialogflow_response.fulfillment_text
+    vk_api.messages.send(
+        user_id=event.user_id,
+        message=help_msg,
+        random_id=random.randint(1, 1000)
+    )
 
 
 def main() -> None:
     """Запуск бота"""
     env = Env()
     env.read_env()
-    bot_token = env('BOT_TOKEN')
-    chat_id = env('CHAT_ID')
-    adm_bot_token = env('ADM_BOT_TOKEN')
+    vk_token = env('VK_KEY')
+    project_id = env('PROJECT_ID')
 
-    adm_bot = Bot(token=adm_bot_token)
+    vk_session = vk.VkApi(token=vk_token)
 
-    log_formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(filename)s %(message)s')
-
-    path = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(path, 'bot-app.log')
-
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(log_formatter)
-    stream_handler.setLevel(logging.INFO)
-
-    log_file = RotatingFileHandler(path, maxBytes=2000, backupCount=2, encoding='utf-8')
-    log_file.setFormatter(log_formatter)
-
-    log_tlg = TelegramLogsHandler(tg_bot=adm_bot, chat_id=chat_id)
-
-    logger.addHandler(stream_handler)
-    logger.addHandler(log_file)
-    logger.addHandler(log_tlg)
-    logger.setLevel(logging.DEBUG)
-
-    logger.info('Телеграм-бот запущен!')
-
-    updater = Updater(bot_token)
-    dispatcher = updater.dispatcher
-
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-
-    updater.start_polling()
-    updater.idle()
+    vk_api = vk_session.get_api()
+    longpoll = VkLongPoll(vk_session)
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+            dialogflow_response = detect_intent_texts(session_id=event.user_id, text=event.text, project_id=project_id)
+            send_msg(event, vk_api, dialogflow_response)
 
 
 if __name__ == '__main__':
