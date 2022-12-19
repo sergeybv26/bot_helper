@@ -97,3 +97,5 @@ python3 bot.py
 * ВКонтакте ```https://vk.com/club217816463```
 
 [!screen-gif](./gif/Демонстрация.gif)
+
+<img src="./gif/Демонстрация.gif" alt="Demonstration bot">
