@@ -96,6 +96,4 @@ python3 bot.py
 * Телеграм ```https://t.me/sukhanov_helper_bot```
 * ВКонтакте ```https://vk.com/club217816463```
 
-[!screen-gif](./gif/Демонстрация.gif)
-
 <img src="./gif/Демонстрация.gif" alt="Demonstration bot">
