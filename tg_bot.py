@@ -32,7 +32,7 @@ def main() -> None:
     """Запуск бота"""
     env = Env()
     env.read_env()
-    bot_token = env('BOT_TOKEN')
+    bot_token = env('TG_BOT_TOKEN')
 
     logger.info('Телеграм-бот хэлпер запущен!')
 

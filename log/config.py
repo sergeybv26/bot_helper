@@ -15,8 +15,8 @@ class TelegramLogsHandler(logging.Handler):
         super().__init__()
         env = Env()
         env.read_env()
-        self.chat_id = env('CHAT_ID')
-        self.adm_bot_token = env('ADM_BOT_TOKEN')
+        self.chat_id = env('TG_ADM_CHAT_ID')
+        self.adm_bot_token = env('TG_ADM_BOT_TOKEN')
         self.tg_bot = Bot(token=self.adm_bot_token)
 
     def emit(self, record) -> None:
