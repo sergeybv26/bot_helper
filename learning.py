@@ -1,4 +1,5 @@
 """Модуль обучения нейросети тренировочными фразами"""
+import argparse
 import json
 import logging
 import os.path
@@ -53,8 +54,13 @@ def create_intent(file_path):
 
 
 if __name__ == '__main__':
+    parser_param = argparse.ArgumentParser('Обучение нейросети на основе обучающих фраз')
+    parser_param.add_argument('-p', '--path', default='jsons/questions.json',
+                              help='Путь к JSON-файлу с обучающими фразами')
+    args = parser_param.parse_args()
+    path = args.path
     print('Начато обучение нейросети')
     base_dir = os.path.dirname(__file__)
-    path = os.path.join(base_dir, 'jsons/questions.json')
-    create_intent('jsons/questions.json')
+    path = os.path.join(base_dir, path)
+    create_intent(path)
     print('Обучение нейросети окончено')
