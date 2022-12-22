@@ -1,12 +1,14 @@
 """Модуль с телеграм-ботом"""
 import logging
+import logging.config
 
 from environs import Env
 from telegram import Update, ForceReply
 from telegram.ext import CallbackContext, Updater, CommandHandler, MessageHandler, Filters
 
-from bot import detect_intent_texts
-from log import config
+from google_dialogflow_api import detect_intent_texts
+from log.config import log_config
+from log.log_handlers import TelegramLogsHandler
 
 logger = logging.getLogger('bot-helper')
 
@@ -32,22 +34,29 @@ def main() -> None:
     """Запуск бота"""
     env = Env()
     env.read_env()
-    bot_token = env('BOT_TOKEN')
+    bot_token = env('TG_BOT_TOKEN')
+    tg_adm_bot_token = env('TG_ADM_BOT_TOKEN')
+    tg_adm_chat_id = env('TG_ADM_CHAT_ID')
+
+    logging.config.dictConfig(log_config)
+    tg_log_handler = TelegramLogsHandler(tg_adm_chat_id, tg_adm_bot_token)
+    logger.addHandler(tg_log_handler)
 
     logger.info('Телеграм-бот хэлпер запущен!')
 
-    updater = Updater(bot_token)
-    dispatcher = updater.dispatcher
+    try:
+        updater = Updater(bot_token)
+        dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_msg))
+        dispatcher.add_handler(CommandHandler("start", start))
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, send_msg))
 
-    updater.start_polling()
-    updater.idle()
+        updater.start_polling()
+        updater.idle()
+    except Exception as err:
+        logger.critical(f'Бот упал с ошибкой: {err}')
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception as err:
-        logger.critical(f'Бот упал с ошибкой: {err}')
+    main()
+
