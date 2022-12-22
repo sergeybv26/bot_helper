@@ -60,9 +60,9 @@ $ pip3 install -r requirements.txt
 
 ### Создание файла с переменными окружения
 Переменные окружения для настройки проекта:
-* ```BOT_TOKEN``` - Токен телеграм-бота
-* ```CHAT_ID``` - id чата
-* ```ADM_BOT_TOKEN``` -Токен телеграм-бота для администратора
+* ```TG_BOT_TOKEN``` - Токен телеграм-бота
+* ```TG_ADM_CHAT_ID``` - id чата администратора
+* ```TG_ADM_BOT_TOKEN``` -Токен телеграм-бота для администратора
 * ```GOOGLE_APPLICATION_CREDENTIALS``` - Путь к файлу application_default_credentials.json
 * ```PROJECT_ID``` - id проекта DialogFlow
 * ```VK_KEY``` - Ключ API ВКонтакте
@@ -89,7 +89,7 @@ python3 tg_bot.py
 
 Для запуска бота ВКонтакте необходимо в командной строке выполнить команду:
 ```shell
-python3 bot.py
+python3 vk_bot.py
 ```
 
 Ознакомиться с функционалом бота-помощника можно:
