@@ -6,7 +6,7 @@ from environs import Env
 from telegram import Update, ForceReply
 from telegram.ext import CallbackContext, Updater, CommandHandler, MessageHandler, Filters
 
-from vk_bot import detect_intent_texts
+from google_dialogflow_api import detect_intent_texts
 from log.config import log_config
 from log.log_handlers import TelegramLogsHandler
 
