@@ -27,11 +27,10 @@ def create_intent(file_path):
     if not isinstance(intents, dict):
         logger.warning(f'Файл {file_path} не содержит JSON с данными')
 
-    for intent in intents.items():
-        display_name = intent[0]
+    for display_name, intent in intents.items():
         logger.debug(f'Создается intent {display_name}')
-        training_phrases_parts = intent[1].get('questions', [])
-        message_texts = (intent[1].get('answer', ''),)
+        training_phrases_parts = intent.get('questions', [])
+        message_texts = (intent.get('answer', ''),)
         training_phrases = []
         for training_phrases_part in training_phrases_parts:
             part = dialogflow.Intent.TrainingPhrase.Part(text=training_phrases_part)
